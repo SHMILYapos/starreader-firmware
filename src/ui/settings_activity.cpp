@@ -8,6 +8,8 @@
 #include "../config.h"
 #include "wifi_activity.h"
 #include "about_activity.h"
+#include "display_settings_activity.h"
+#include "frontlight_settings_activity.h"
 #include <string.h>
 #include <cstdio>
 
@@ -190,6 +192,24 @@ void SettingsActivity::launchGroup(int group) {
     if (!m_manager) return;
 
     switch (group) {
+        case GROUP_DISPLAY: {
+            // 显示设置子页
+            DisplaySettingsActivity* displaySettings = new DisplaySettingsActivity(
+                m_display, m_input, m_storage, m_power,
+                m_touch, m_frontLight, m_settingsManager);
+            m_manager->pushActivity(displaySettings);
+            break;
+        }
+
+        case GROUP_FRONTLIGHT: {
+            // 前光设置子页
+            FrontLightSettingsActivity* flSettings = new FrontLightSettingsActivity(
+                m_display, m_input, m_storage, m_power,
+                m_touch, m_frontLight, m_settingsManager);
+            m_manager->pushActivity(flSettings);
+            break;
+        }
+
         case GROUP_NETWORK: {
             WifiActivity* wifi = new WifiActivity(
                 m_display, m_input, m_storage, m_power,
@@ -208,7 +228,7 @@ void SettingsActivity::launchGroup(int group) {
         }
 
         default:
-            // 显示/阅读/前光 - 子页待开发
+            // 阅读设置 - 子页待开发
             requestUpdate();
             break;
     }
