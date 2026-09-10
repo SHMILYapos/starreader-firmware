@@ -1,210 +1,224 @@
-# Xteink X4 Pro Hardware Documentation
+# 阅星瞳 X4 Pro 硬件文档
 
-## Overview
+## 概述
 
-The Xteink X4 Pro is the premium ultra-portable e-ink reader with capacitive touchscreen and dual-tone front light, based on the ESP32-C3 microcontroller. This document summarizes the hardware specifications and pin definitions discovered through community reverse engineering and product specifications.
+阅星瞳 X4 Pro 是一款配备电容触控屏和双色前光的超薄便携电子墨水屏阅读器，基于 ESP32-C3 微控制器。本文档总结了通过社区逆向工程和产品规格获得的硬件规格和引脚定义。
 
-## Hardware Specifications
+---
 
-### MCU
-- **Chip:** ESP32-C3FH4
-- **Architecture:** RISC-V 32-bit, single core
-- **Clock Speed:** 160 MHz
-- **Flash:** 16MB SPI flash
-- **RAM:** 400KB SRAM (~380KB usable for application)
-- **WiFi:** 802.11 b/g/n
-- **Bluetooth:** BLE 5.0
+## 硬件规格
 
-### Display
-- **Type:** E-Ink (EPD)
-- **Size:** 4.3 inches diagonal
-- **Resolution:** 800 × 480 pixels
-- **Driver IC:** SSD1677
-- **Panel Model:** GDEQ0426T82
-- **Interface:** SPI
-- **Grayscale:** Monochrome (1-bit), 4-level grayscale supported via multi-pass
-- **Touch:** Capacitive touchscreen (I2C)
+### 主控 MCU
+- **芯片：** ESP32-C3FH4
+- **架构：** RISC-V 32位，单核
+- **主频：** 160 MHz
+- **Flash：** 16MB SPI Flash
+- **RAM：** 400KB SRAM（应用可用约 380KB）
+- **WiFi：** 802.11 b/g/n
+- **蓝牙：** BLE 5.0
 
-### Touch Panel
-- **Type:** Capacitive multi-touch
-- **Interface:** I2C (400kHz)
-- **Touch IC:** GT911 compatible
-- **Features:** Tap, double-tap, swipe gestures, long press
-- **Home Key:** Capacitive touch button on bottom bezel
+### 显示屏
+- **类型：** 电子墨水屏 (EPD)
+- **尺寸：** 4.3 英寸对角线
+- **分辨率：** 800 × 480 像素
+- **驱动 IC：** SSD1677
+- **面板型号：** GDEQ0426T82
+- **接口：** SPI
+- **灰度：** 单色（1位），支持多次刷新实现 4 级灰度
+- **触控：** 电容触控屏（I2C）
 
-### Front Light
-- **Type:** Dual-tone LED (warm + cool white)
-- **Control:** PWM dimming
-- **Brightness:** 0-100% adjustable
-- **Color Temperature:** Fully adjustable between warm and cool
-- **Uniformity:** Even illumination across screen
+### 触控面板
+- **类型：** 电容式多点触控
+- **接口：** I2C（400kHz）
+- **触控 IC：** GT911 兼容
+- **特性：** 点按、双击、滑动手势、长按
+- **Home 键：** 底部边框电容触控按键
 
-### Storage
-- **microSD Card:** Yes (SPI interface)
-- **File System:** FAT32
+### 前光
+- **类型：** 双色 LED（暖白 + 冷白）
+- **控制：** PWM 调光
+- **亮度：** 0-100% 可调
+- **色温：** 冷暖之间完全可调
+- **均匀性：** 屏幕光照均匀
 
-### Input
-- **Touch Screen:** Capacitive, tap + swipe gestures
-- **Side Buttons:** 2 (Left / Right page turn)
-- **Confirm / Back:** Via touch UI
-- **Power Button:** 1 (top)
-- **Capacitive Home Key:** Bottom touch-sensitive button
+### 存储
+- **microSD 卡：** 支持（SPI 接口）
+- **文件系统：** FAT32
 
-### Power
-- **Battery:** Li-polymer (capacity TBD)
-- **Charging:** Magnetic pogo pins (no USB-C port)
-- **Battery Monitoring:** ADC with voltage divider
-- **Deep Sleep:** Supported
+### 输入
+- **触摸屏：** 电容式，点按 + 滑动手势
+- **侧边按键：** 2 个（左/右翻页）
+- **确认/返回：** 通过触控界面
+- **电源键：** 1 个（顶部）
+- **电容 Home 键：** 底部触控按键
 
-### Physical
-- **Dimensions:** Ultra-slim form factor
-- **Thickness:** 5.95mm
-- **Weight:** ~70g
-- **Magnetic:** Yes (charging + data transfer)
+### 电源
+- **电池：** 锂聚合物电池（容量待定）
+- **充电：** 磁吸顶针（无 Type-C 接口）
+- **电池监测：** ADC 分压检测
+- **深度休眠：** 支持
 
-## Pin Definitions
+### 物理特性
+- **尺寸：** 超薄设计
+- **厚度：** 5.95mm
+- **重量：** 约 70g
+- **磁吸：** 支持（充电 + 数据传输）
 
-### E-Paper Display (SPI)
+---
 
-| Signal | GPIO | Notes |
-|--------|------|-------|
-| SCLK | GPIO8 | SPI Clock |
-| MOSI | GPIO10 | SPI Data (Master Out) |
-| CS | GPIO21 | Chip Select (active LOW) |
-| DC | GPIO4 | Data/Command select |
-| RST | GPIO5 | Reset (active LOW) |
-| BUSY | GPIO6 | Busy signal (HIGH = busy) |
+## 引脚定义
 
-### Touch Panel (I2C)
+### 电子墨水屏显示（SPI）
 
-| Signal | GPIO | Notes |
-|--------|------|-------|
-| SDA | GPIO9 | I2C Data |
-| SCL | GPIO10 | I2C Clock |
-| INT | GPIO7 | Touch interrupt (active LOW) |
-| RST | GPIO2 | Touch reset |
+| 信号 | GPIO | 说明 |
+|------|------|------|
+| SCLK | GPIO8 | SPI 时钟 |
+| MOSI | GPIO10 | SPI 数据（主出从入） |
+| CS | GPIO21 | 片选（低电平有效） |
+| DC | GPIO4 | 数据/命令选择 |
+| RST | GPIO5 | 复位（低电平有效） |
+| BUSY | GPIO6 | 忙信号（高电平=忙） |
 
-*Note: SCL pin is shared with SPI MOSI - verify actual pinout on hardware revision.*
+### 触控面板（I2C）
 
-### Front Light (PWM)
+| 信号 | GPIO | 说明 |
+|------|------|------|
+| SDA | GPIO9 | I2C 数据 |
+| SCL | GPIO10 | I2C 时钟 |
+| INT | GPIO7 | 触控中断（低电平有效） |
+| RST | GPIO2 | 触控复位 |
 
-| Signal | GPIO | Notes |
-|--------|------|-------|
-| Warm LED PWM | GPIO1 | Warm white channel brightness |
-| Cool LED PWM | GPIO2 | Cool white channel brightness |
+*注意：SCL 引脚与 SPI MOSI 共享 - 请在硬件版本上验证实际引脚分配。*
 
-*PWM frequency: 5kHz, 10-bit resolution (0-1023)*
+### 前光（PWM）
 
-### microSD Card (SPI - shared with EPD)
+| 信号 | GPIO | 说明 |
+|------|------|------|
+| 暖光 PWM | GPIO1 | 暖白通道亮度 |
+| 冷光 PWM | GPIO2 | 冷白通道亮度 |
 
-| Signal | GPIO | Notes |
-|--------|------|-------|
-| CS (SS) | GPIO12 | Card select |
-| MISO | GPIO7 | Data In to ESP32 |
-| MOSI | GPIO10 | Data Out from ESP32 (shared) |
-| SCK | GPIO8 | Clock (shared) |
+*PWM 频率：5kHz，10位分辨率（0-1023）*
 
-### Button Input (Resistor Ladder ADC)
+### microSD 卡（SPI - 与 EPD 共享）
 
-Buttons are connected via resistor ladder networks to ADC pins.
+| 信号 | GPIO | 说明 |
+|------|------|------|
+| CS (SS) | GPIO12 | 卡选择 |
+| MISO | GPIO7 | ESP32 数据输入 |
+| MOSI | GPIO10 | ESP32 数据输出（共享） |
+| SCK | GPIO8 | 时钟（共享） |
 
-**GPIO1 (Side Buttons):**
+### 按键输入（电阻梯 ADC）
 
-| Button | ADC Value (approx) | Voltage (approx) |
-|--------|---------------------|------------------|
-| Left (Prev Page) | ~1470 | 1.18V |
-| Right (Next Page) | ~3 | 0.00V |
+按键通过电阻梯网络连接到 ADC 引脚。
 
-**GPIO2 (Additional Buttons):**
+**GPIO1（侧边按键）：**
 
-| Button | ADC Value (approx) | Voltage (approx) |
-|--------|---------------------|------------------|
-| Confirm | ~2655 | 2.14V |
-| Back | ~3470 | 2.79V |
+| 按键 | ADC 值（约） | 电压（约） |
+|------|-------------|-----------|
+| 左（上一页） | ~1470 | 1.18V |
+| 右（下一页） | ~3 | 0.00V |
 
-**Power Button:**
+**GPIO2（附加按键）：**
 
-| Signal | GPIO | Notes |
-|--------|------|-------|
-| POWER | GPIO3 | Active LOW |
+| 按键 | ADC 值（约） | 电压（约） |
+|------|-------------|-----------|
+| 确认 | ~2655 | 2.14V |
+| 返回 | ~3470 | 2.79V |
 
-**Capacitive Home Key:**
+**电源键：**
 
-| Signal | GPIO | Notes |
-|--------|------|-------|
-| HOME | GPIO20 | Capacitive touch button |
+| 信号 | GPIO | 说明 |
+|------|------|------|
+| POWER | GPIO3 | 低电平有效 |
 
-### Battery Monitoring
+**电容 Home 键：**
 
-| Signal | GPIO | Notes |
-|--------|------|-------|
-| BAT_ADC | GPIO0 | Battery voltage via 2×10K divider (reads 1/2) |
+| 信号 | GPIO | 说明 |
+|------|------|------|
+| HOME | GPIO20 | 电容触控按键 |
 
-### Magnetic Charging Detection
+### 电池监测
 
-| Signal | GPIO | Notes |
-|--------|------|-------|
-| MAG_DET | GPIO20 | Magnetic dock / charger detection |
+| 信号 | GPIO | 说明 |
+|------|------|------|
+| BAT_ADC | GPIO0 | 电池电压经 2×10K 分压（读数为 1/2） |
 
-## Boot Modes
+### 磁吸充电检测
 
-### Normal Boot
-- Press power button
-- Boots from active OTA partition
+| 信号 | GPIO | 说明 |
+|------|------|------|
+| MAG_DET | GPIO20 | 磁吸底座/充电器检测 |
 
-### Flash Mode (Download Mode)
-1. Hold specific key combo during power on
-2. Connect magnetic data adapter
-3. Device enters download mode
-4. Use esptool to flash firmware
+---
 
-### Recovery Mode
-- Use SD card recovery (update.bin on SD card root)
+## 启动模式
 
-## Flash Layout
+### 正常启动
+- 按电源键
+- 从活动 OTA 分区启动
+
+### 下载模式（Flash 模式）
+1. 开机时按住特定按键组合
+2. 连接磁吸数据适配器
+3. 设备进入下载模式
+4. 使用 esptool 烧录固件
+
+### 恢复模式
+- 使用 SD 卡恢复（在 SD 卡根目录放置 update.bin）
+
+---
+
+## Flash 布局
 
 ```
-0x000000  Bootloader
-0x090000  NVS (Non-Volatile Storage)
-0x0E0000  OTA Data
-0x100000  App0 (OTA Partition 0) - ~6.5MB
-0x650000  App1 (OTA Partition 1) - ~6.5MB
-0xC90000  SPIFFS / File System - ~3.5MB
+0x000000  Bootloader（引导加载程序）
+0x090000  NVS（非易失性存储）
+0x0E0000  OTA 数据
+0x100000  App0（OTA 分区 0）- 约 6.5MB
+0x650000  App1（OTA 分区 1）- 约 6.5MB
+0xC90000  SPIFFS / 文件系统 - 约 3.5MB
 ```
 
-## X4 Pro Exclusive Features
+---
 
-### Touch Gestures
-The X4 Pro supports intuitive touch gestures:
-- **Tap** - Select / open
-- **Swipe Left** - Next page
-- **Swipe Right** - Previous page
-- **Swipe Down** - Quick settings panel (front light, brightness)
-- **Swipe Up** - Main menu
-- **Long Press** - Context menu
+## X4 Pro 专属功能
 
-### Front Light Control
-- Pull down from top edge to open quick settings
-- Adjust brightness slider
-- Adjust warmth slider (warm ↔ cool)
-- Tap to toggle on/off
+### 触控手势
+X4 Pro 支持直观的触控手势：
+- **点按** - 选择/打开
+- **左滑** - 下一页
+- **右滑** - 上一页
+- **下滑** - 快速设置面板（前光、亮度）
+- **上滑** - 主菜单
+- **长按** - 上下文菜单
 
-### Magnetic Connectivity
-- Magnetic charging pogo pins
-- Magnetic data transfer (connect to computer)
-- Magnetic attachment to phone back
+### 前光控制
+- 从顶部边缘下拉打开快速设置
+- 调节亮度滑块
+- 调节色温滑块（暖 ↔ 冷）
+- 点按开关
 
-## Known Issues & Notes
+### 磁吸连接
+- 磁吸充电顶针
+- 磁吸数据传输（连接电脑）
+- 磁吸吸附到手机背面
 
-1. **Shared SPI bus** - EPD and SD card share the same SPI bus. CS signals are used to arbitrate.
-2. **Touch I2C shared pins** - Some I2C pins may overlap with SPI. Verify actual routing.
-3. **Button debouncing** - Use threshold ranges with hysteresis to avoid false triggers.
-4. **ADC noise** - ADC readings may vary slightly; use ranges with margins.
-5. **Magnetic port** - No traditional USB-C; uses magnetic pogo pins for data and power.
+---
 
-## References
+## 已知问题与注意事项
 
-- [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader) - Open firmware project
-- [open-x4-epaper](https://github.com/open-x4-epaper) - Community SDK
-- [Xteink X4 Pro Product Page](https://www.xteink.com/products/xteink-x4pro) - Official specs
-- [Digital Trends Review](https://www.digitaltrends.com/phones/xteink-x4-pro-review/) - X4 Pro review
+1. **SPI 总线共享** - EPD 和 SD 卡共享同一 SPI 总线，使用 CS 信号仲裁
+2. **触控 I2C 引脚共享** - 部分 I2C 引脚可能与 SPI 重叠，请验证实际布线
+3. **按键消抖** - 使用带迟滞的阈值范围以避免误触发
+4. **ADC 噪声** - ADC 读数可能略有变化，使用带余量的范围
+5. **磁吸接口** - 无传统 Type-C 接口，使用磁吸顶针进行数据和电源传输
+
+---
+
+## 参考资料
+
+- [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader) - 开源固件项目
+- [open-x4-epaper](https://github.com/open-x4-epaper) - 社区 SDK
+- [Xteink X4 Pro 产品页面](https://www.xteink.com/products/xteink-x4pro) - 官方规格
+- [Digital Trends 评测](https://www.digitaltrends.com/phones/xteink-x4-pro-review/) - X4 Pro 评测
