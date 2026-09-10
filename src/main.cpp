@@ -166,9 +166,15 @@ void createActivities() {
     Serial.println("Creating activities...");
 
     activityManager = new ActivityManager(display, input, storage, powerManager);
+    
+    // Inject shared hardware references
+    activityManager->setTouch(touch);
+    activityManager->setFrontLight(frontLight);
+    activityManager->setSettingsManager(settingsManager);
 
     // Start with home activity
-    HomeActivity* home = new HomeActivity(display, input, storage, powerManager);
+    HomeActivity* home = new HomeActivity(display, input, storage, powerManager,
+                                          touch, frontLight, settingsManager);
     activityManager->startActivity(home);
 
     Serial.println("Home activity started.");

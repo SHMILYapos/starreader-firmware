@@ -1,5 +1,5 @@
 /**
- * StarReader Firmware - Activity Base Class
+ * StarReader Pro Firmware - Activity Base Class
  * 
  * Activity-based navigation pattern (similar to Android)
  * Each screen is an Activity with well-defined lifecycle
@@ -10,8 +10,11 @@
 
 #include "../hal/display.h"
 #include "../hal/input.h"
+#include "../hal/touch.h"
+#include "../hal/frontlight.h"
 #include "../hal/storage.h"
 #include "../hal/power.h"
+#include "../utils/settings.h"
 
 // Forward declarations
 class ActivityManager;
@@ -24,8 +27,11 @@ public:
     Activity(HalDisplay* display, HalInput* input, HalStorage* storage, HalPowerManager* power)
         : m_display(display)
         , m_input(input)
+        , m_touch(nullptr)
+        , m_frontLight(nullptr)
         , m_storage(storage)
         , m_power(power)
+        , m_settingsManager(nullptr)
         , m_manager(nullptr)
         , m_initialized(false) {}
 
@@ -41,14 +47,22 @@ public:
     // Navigation
     void setActivityManager(ActivityManager* manager) { m_manager = manager; }
 
+    // Hardware accessors (set by manager)
+    void setTouch(HalTouch* touch) { m_touch = touch; }
+    void setFrontLight(HalFrontLight* light) { m_frontLight = light; }
+    void setSettingsManager(SettingsManager* settings) { m_settingsManager = settings; }
+
     // Settings
     virtual bool preventAutoSleep() { return false; }
 
 protected:
     HalDisplay* m_display;
     HalInput* m_input;
+    HalTouch* m_touch;
+    HalFrontLight* m_frontLight;
     HalStorage* m_storage;
     HalPowerManager* m_power;
+    SettingsManager* m_settingsManager;
     ActivityManager* m_manager;
     bool m_initialized;
 };
@@ -61,8 +75,11 @@ public:
     ActivityManager(HalDisplay* display, HalInput* input, HalStorage* storage, HalPowerManager* power)
         : m_display(display)
         , m_input(input)
+        , m_touch(nullptr)
+        , m_frontLight(nullptr)
         , m_storage(storage)
         , m_power(power)
+        , m_settingsManager(nullptr)
         , m_currentActivity(nullptr)
         , m_previousActivity(nullptr) {}
 
@@ -70,6 +87,11 @@ public:
         if (m_currentActivity) delete m_currentActivity;
         if (m_previousActivity) delete m_previousActivity;
     }
+
+    // Set shared hardware references
+    void setTouch(HalTouch* touch) { m_touch = touch; }
+    void setFrontLight(HalFrontLight* light) { m_frontLight = light; }
+    void setSettingsManager(SettingsManager* settings) { m_settingsManager = settings; }
 
     // Start a new activity (replaces current)
     void startActivity(Activity* activity) {
@@ -80,6 +102,7 @@ public:
 
         m_currentActivity = activity;
         m_currentActivity->setActivityManager(this);
+        injectHardware(m_currentActivity);
         m_currentActivity->onEnter();
     }
 
@@ -104,6 +127,7 @@ public:
         }
         m_currentActivity = activity;
         m_currentActivity->setActivityManager(this);
+        injectHardware(m_currentActivity);
         m_currentActivity->onEnter();
     }
 
@@ -123,10 +147,19 @@ public:
     Activity* getCurrentActivity() { return m_currentActivity; }
 
 private:
+    void injectHardware(Activity* activity) {
+        if (m_touch) activity->setTouch(m_touch);
+        if (m_frontLight) activity->setFrontLight(m_frontLight);
+        if (m_settingsManager) activity->setSettingsManager(m_settingsManager);
+    }
+
     HalDisplay* m_display;
     HalInput* m_input;
+    HalTouch* m_touch;
+    HalFrontLight* m_frontLight;
     HalStorage* m_storage;
     HalPowerManager* m_power;
+    SettingsManager* m_settingsManager;
     Activity* m_currentActivity;
     Activity* m_previousActivity;
 };
