@@ -180,16 +180,16 @@ void ReaderSettingsActivity::cycleSetting(int item, int direction) {
 
     switch (item) {
         case SETTING_PAGE_TURN:
-            s->pageTurnMode = (s->pageTurnMode + direction + 3) % 3;
+            s->lineSpacing = (s->lineSpacing + direction + 3) % 3;
             break;
         case SETTING_STATUS_BAR:
-            s->statusBarMode = (s->statusBarMode + direction + 6) % 6;
+            s->statusBarEnabled = !s->statusBarEnabled;
             break;
         case SETTING_PROGRESS_SYNC:
-            s->progressSync = (s->progressSync + direction + 2) % 2;
+            s->autoRefreshPages = (s->autoRefreshPages + direction + 4) % 5;
             break;
         case SETTING_BATTERY_DISPLAY:
-            s->batteryDisplay = (s->batteryDisplay + direction + 2) % 2;
+            s->justification = !s->justification;
             break;
     }
 
@@ -203,26 +203,19 @@ const char* ReaderSettingsActivity::getSettingValueText(int item) {
 
     switch (item) {
         case SETTING_PAGE_TURN:
-            switch (s->pageTurnMode) {
-                case 0: return "左右翻页";
-                case 1: return "上下翻页";
-                case 2: return "触屏翻页";
+            switch (s->lineSpacing) {
+                case 0: return "紧凑";
+                case 1: return "标准";
+                case 2: return "宽松";
                 default: return "?";
             }
         case SETTING_STATUS_BAR:
-            switch (s->statusBarMode) {
-                case 0: return "隐藏";
-                case 1: return "仅电量";
-                case 2: return "完整信息";
-                case 3: return "章节进度";
-                case 4: return "全书进度";
-                case 5: return "百分比";
-                default: return "?";
-            }
+            return s->statusBarEnabled ? "显示" : "隐藏";
         case SETTING_PROGRESS_SYNC:
-            return s->progressSync ? "开启" : "关闭";
+            snprintf(buf, sizeof(buf), "每%d页全刷", s->autoRefreshPages);
+            return buf;
         case SETTING_BATTERY_DISPLAY:
-            return s->batteryDisplay ? "百分比" : "图标";
+            return s->justification ? "两端对齐" : "左对齐";
         default:
             return "";
     }

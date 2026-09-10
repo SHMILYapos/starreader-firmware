@@ -208,9 +208,7 @@ void SleepScreenActivity::updateTime() {
 void SleepScreenActivity::wakeUp() {
     // 唤醒设备，回到主页
     if (m_manager) {
-        // 弹出所有Activity回到主页
-        while (m_manager->getStackDepth() > 1) {
-            m_manager->goBack();
-        }
+        // 返回到主页
+        m_manager->goBack();
     }
 }
