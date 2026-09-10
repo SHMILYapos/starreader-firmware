@@ -1,9 +1,12 @@
 /**
  * StarReader Pro Firmware - Settings Activity Implementation
+ * 
+ * 设置界面实现（双语支持）
  */
 
 #include "settings_activity.h"
 #include "../config.h"
+#include "../utils/i18n.h"
 #include <string.h>
 
 SettingsActivity::SettingsActivity(HalDisplay* display, HalInput* input, HalStorage* storage, 
@@ -91,14 +94,19 @@ void SettingsActivity::render() {
 
     // Title bar
     m_display->fillRect(0, 0, width, 35, 0x00);
-    const char* title = "Settings";
+    const char* title = _(STR_SETTINGS_TITLE);
     int16_t titleWidth = m_display->getStringWidth(title, 2);
     m_display->drawString((width - titleWidth) / 2, 8, title, 0xFF, 2);
 
     drawSettings();
 
     // Footer
-    const char* hint = "Up/Down: Select  Left/Right: Adjust  Back: Exit";
+    const char* hint;
+    if (I18n::getLanguage() == LANG_CN) {
+        hint = "上下键: 选择  左右键: 调节  返回键: 退出";
+    } else {
+        hint = "Up/Down: Select  Left/Right: Adjust  Back: Exit";
+    }
     int16_t hintWidth = m_display->getStringWidth(hint, 1);
     m_display->drawString((width - hintWidth) / 2, height - 18, hint, 0x00, 1);
 
@@ -107,24 +115,30 @@ void SettingsActivity::render() {
 }
 
 void SettingsActivity::drawSettings() {
+    // 获取双语设置项名称
     const char* settingNames[] = {
-        // Front Light
-        "Front Light",
-        "  Brightness",
-        "  Warmth",
-        "  Presets",
-        // Display
-        "Font Size",
-        "Orientation",
-        "Refresh Mode",
-        // Reader
-        "Line Spacing",
-        "Justification",
-        // Power
-        "Sleep Timeout",
-        "Auto Refresh",
-        // System
-        "About"
+        // 前光设置
+        _(STR_FRONT_LIGHT),
+        "  " STR_BRIGHTNESS,
+        "  " STR_WARMTH,
+        "  " STR_PRESETS,
+        // 显示设置
+        _(STR_DISPLAY),
+        "  " STR_FONT_SIZE,
+        "  " STR_ORIENTATION,
+        "  " STR_REFRESH_MODE,
+        // 阅读设置
+        _(STR_READER),
+        "  " STR_LINE_SPACING,
+        "  " STR_JUSTIFICATION,
+        // 电源设置
+        _(STR_POWER),
+        "  " STR_SLEEP_TIMEOUT,
+        "  " STR_AUTO_REFRESH,
+        // 系统设置
+        _(STR_SYSTEM),
+        "  " STR_LANGUAGE,
+        "  " STR_ABOUT
     };
 
     for (int i = 0; i < SETTING_COUNT; i++) {
@@ -339,18 +353,27 @@ void SettingsActivity::cycleSetting(int item, int direction) {
             if (m_autoRefreshPages > 200) m_autoRefreshPages = 200;
             break;
 
+        case SETTING_LANGUAGE:
+            // 切换语言
+            I18n::toggleLanguage();
+            if (m_settingsManager) {
+                m_settingsManager->setLanguage(I18n::getLanguage());
+            }
+            m_needsRender = true;
+            break;
+
         case SETTING_ABOUT:
-            // TODO: Show about dialog
+            // TODO: 跳转到关于界面
             break;
     }
 }
 
 const char* SettingsActivity::getSettingValueText(int item) {
-    static char buf[24];
+    static char buf[32];
 
     switch (item) {
         case SETTING_FRONT_LIGHT_ON:
-            return m_frontLightOn ? "ON" : "OFF";
+            return m_frontLightOn ? "ON / 开" : "OFF / 关";
 
         case SETTING_BRIGHTNESS:
             snprintf(buf, sizeof(buf), "%d%%", m_brightness);
@@ -361,56 +384,59 @@ const char* SettingsActivity::getSettingValueText(int item) {
             return buf;
 
         case SETTING_PRESETS:
-            return "Reading/Night/Day";
+            return _(STR_PRESET_READING);
 
         case SETTING_FONT_SIZE:
             switch (m_fontSize) {
-                case 0: return "Small";
-                case 1: return "Medium";
-                case 2: return "Large";
-                case 3: return "XLarge";
+                case 0: return _(STR_SMALL);
+                case 1: return _(STR_MEDIUM);
+                case 2: return _(STR_LARGE);
+                case 3: return _(STR_XLARGE);
                 default: return "?";
             }
 
         case SETTING_ORIENTATION:
             switch (m_orientation) {
-                case 0: return "Portrait";
-                case 1: return "Landscape";
-                case 2: return "Portrait Inv";
-                case 3: return "Landscape Inv";
+                case 0: return _(STR_PORTRAIT);
+                case 1: return _(STR_LANDSCAPE);
+                case 2: return _(STR_PORTRAIT);
+                case 3: return _(STR_LANDSCAPE);
                 default: return "?";
             }
 
         case SETTING_REFRESH_MODE:
             switch (m_refreshMode) {
-                case 0: return "Full";
-                case 1: return "Partial";
-                case 2: return "Fast";
+                case 0: return _(STR_FULL);
+                case 1: return _(STR_PARTIAL);
+                case 2: return _(STR_FAST);
                 default: return "?";
             }
 
         case SETTING_LINE_SPACING:
             switch (m_lineSpacing) {
-                case 0: return "Tight";
-                case 1: return "Normal";
-                case 2: return "Relaxed";
+                case 0: return _(STR_TIGHT);
+                case 1: return _(STR_NORMAL);
+                case 2: return _(STR_RELAXED);
                 default: return "?";
             }
 
         case SETTING_JUSTIFICATION:
-            return m_justification ? "Justified" : "Left";
+            return m_justification ? _(STR_JUSTIFIED) : _(STR_LEFT);
 
         case SETTING_SLEEP_TIMEOUT:
             if (m_sleepTimeoutMin >= 60) {
-                return "Never";
+                return _(STR_NEVER);
             } else {
-                snprintf(buf, sizeof(buf), "%d min", m_sleepTimeoutMin);
+                snprintf(buf, sizeof(buf), "%d %s", m_sleepTimeoutMin, _(STR_MINUTES));
                 return buf;
             }
 
         case SETTING_AUTO_REFRESH:
-            snprintf(buf, sizeof(buf), "%d pages", m_autoRefreshPages);
+            snprintf(buf, sizeof(buf), "%d %s", m_autoRefreshPages, _(STR_PAGES));
             return buf;
+
+        case SETTING_LANGUAGE:
+            return I18n::getLanguage() == LANG_CN ? "中文" : "English";
 
         case SETTING_ABOUT:
             return "v0.2.0 Pro";
@@ -434,6 +460,7 @@ void SettingsActivity::applySettings() {
     s->justification = m_justification;
     s->sleepTimeoutSec = m_sleepTimeoutMin * 60;
     s->autoRefreshPages = m_autoRefreshPages;
+    s->language = I18n::getLanguage();
 
     m_settingsManager->save();
 }

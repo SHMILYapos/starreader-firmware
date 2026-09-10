@@ -1,7 +1,7 @@
 /**
  * StarReader Pro Firmware - Settings Activity
  * 
- * Settings menu with front light controls (X4 Pro)
+ * 设置菜单界面（双语支持）
  */
 
 #ifndef STARREADER_UI_SETTINGS_ACTIVITY_H
@@ -52,6 +52,7 @@ private:
         SETTING_AUTO_REFRESH,
 
         // System
+        SETTING_LANGUAGE,
         SETTING_ABOUT,
         SETTING_COUNT
     };
@@ -73,6 +74,7 @@ private:
     uint8_t m_refreshMode;
     uint8_t m_lineSpacing;
     uint8_t m_justification;
+    uint8_t m_language;
     uint16_t m_sleepTimeoutMin;
     uint16_t m_autoRefreshPages;
 

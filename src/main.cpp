@@ -20,6 +20,7 @@
 #include "ui/activity.h"
 #include "ui/home_activity.h"
 #include "utils/settings.h"
+#include "utils/i18n.h"
 
 // Global objects
 static HalDisplay* display = nullptr;
@@ -154,8 +155,14 @@ void initializeHardware() {
 
         frontLight->setBrightness(settingsManager->getSettings()->brightness);
         frontLight->setWarmth(settingsManager->getSettings()->frontLightWarmth);
+        
+        // 初始化语言设置
+        I18n::setLanguage((Language)settingsManager->getSettings()->language);
+        Serial.printf("Language: %s\n", I18n::getLanguage() == LANG_CN ? "中文" : "English");
     } else {
         Serial.println("Using default settings");
+        // 默认使用中文
+        I18n::setLanguage(LANG_CN);
         settingsManager->save();
     }
 

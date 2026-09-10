@@ -1,11 +1,16 @@
 /**
  * StarReader Pro Firmware - Home Activity Implementation
+ * 
+ * 主菜单界面实现（双语支持）
  */
 
 #include "home_activity.h"
 #include "../config.h"
 #include "txt_reader_activity.h"
 #include "settings_activity.h"
+#include "library_activity.h"
+#include "about_activity.h"
+#include "../utils/i18n.h"
 #include <string.h>
 
 HomeActivity::HomeActivity(HalDisplay* display, HalInput* input, HalStorage* storage, HalPowerManager* power,
@@ -87,32 +92,33 @@ void HomeActivity::drawStatusBar() {
 
     // Front light status (center)
     if (m_frontLight && m_frontLight->isOn()) {
-        char lightText[16];
-        snprintf(lightText, sizeof(lightText), "Light %d%%", m_frontLight->getBrightness());
+        char lightText[32];
+        snprintf(lightText, sizeof(lightText), "%s %d%%", _(STR_LIGHT), m_frontLight->getBrightness());
         int16_t textWidth = m_display->getStringWidth(lightText, 1);
         m_display->drawString((width - textWidth) / 2, 8, lightText, 0xFF, 1);
     }
 
-    // Title (right of center)
+    // Title
     const char* title = "StarReader Pro";
     int16_t titleWidth = m_display->getStringWidth(title, 2);
     m_display->drawString((width - titleWidth) / 2 + 80, 5, title, 0xFF, 2);
 
-    // USB / Magnetic status (right)
+    // USB / Charging status (right)
     if (m_power->isUsbConnected()) {
-        m_display->drawString(width - 50, 8, "USB", 0xFF, 1);
+        m_display->drawString(width - 60, 8, _(STR_CHARGING), 0xFF, 1);
     }
 }
 
 void HomeActivity::drawMenu() {
     int16_t width = m_display->getRotatedWidth();
 
+    // 获取双语菜单项
     const char* menuItems[] = {
-        "Continue Reading",
-        "Library",
-        "Settings",
-        "About",
-        "Sleep"
+        _(STR_CONTINUE_READING),
+        _(STR_LIBRARY),
+        _(STR_SETTINGS),
+        _(STR_ABOUT),
+        _(STR_SLEEP)
     };
 
     // Check if there's a last book to show "Continue Reading"
@@ -142,7 +148,7 @@ void HomeActivity::drawMenu() {
             if (i == MENU_CONTINUE_READING && m_settingsManager) {
                 StarReaderSettings* s = m_settingsManager->getSettings();
                 char pageText[32];
-                snprintf(pageText, sizeof(pageText), "Page %d", s->lastBookPage);
+                snprintf(pageText, sizeof(pageText), "%s %d", _(STR_PAGE), s->lastBookPage);
                 m_display->drawString(width - 120, y + 20, pageText, 0xFF, 1);
             }
         } else {
@@ -156,7 +162,14 @@ void HomeActivity::drawFooter() {
     int16_t width = m_display->getRotatedWidth();
     int16_t height = m_display->getRotatedHeight();
 
-    const char* hint = "Tap to select  Up/Down: Navigate  Right: Enter  Back: Exit";
+    // 底部提示（双语）
+    const char* hint;
+    if (I18n::getLanguage() == LANG_CN) {
+        hint = "点击选择  上下键: 移动  确认: 进入  返回: 退出";
+    } else {
+        hint = "Tap to select  Up/Down: Navigate  Right: Enter  Back: Exit";
+    }
+    
     int16_t hintWidth = m_display->getStringWidth(hint, 1);
     m_display->drawString((width - hintWidth) / 2, height - 20, hint, 0x40, 1);
 }
@@ -258,11 +271,10 @@ void HomeActivity::launchMenuItem(int item) {
     if (!m_manager) return;
 
     switch (item) {
-        case MENU_CONTINUE_READING:
-        case MENU_LIBRARY: {
-            // Open TXT reader
+        case MENU_CONTINUE_READING: {
+            // 继续阅读 - 打开上次阅读的文件
             const char* filePath = "/books/sample.txt";
-            if (item == MENU_CONTINUE_READING && m_settingsManager) {
+            if (m_settingsManager) {
                 StarReaderSettings* s = m_settingsManager->getSettings();
                 if (s->lastBookPath[0] != '\0') {
                     filePath = s->lastBookPath;
@@ -276,6 +288,15 @@ void HomeActivity::launchMenuItem(int item) {
             break;
         }
 
+        case MENU_LIBRARY: {
+            // 书库 - 打开文件浏览器
+            LibraryActivity* library = new LibraryActivity(
+                m_display, m_input, m_storage, m_power,
+                m_touch, m_frontLight, m_settingsManager);
+            m_manager->pushActivity(library);
+            break;
+        }
+
         case MENU_SETTINGS: {
             SettingsActivity* settings = new SettingsActivity(
                 m_display, m_input, m_storage, m_power,
@@ -284,9 +305,14 @@ void HomeActivity::launchMenuItem(int item) {
             break;
         }
 
-        case MENU_ABOUT:
-            // TODO: Show about screen
+        case MENU_ABOUT: {
+            // 关于 - 显示设备信息
+            AboutActivity* about = new AboutActivity(
+                m_display, m_input, m_storage, m_power,
+                m_touch, m_frontLight, m_settingsManager);
+            m_manager->pushActivity(about);
             break;
+        }
 
         case MENU_SLEEP:
             if (m_frontLight) m_frontLight->off();
