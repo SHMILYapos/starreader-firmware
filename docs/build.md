@@ -1,6 +1,6 @@
-# Build & Flash Guide
+# Build & Flash Guide for Xteink X4 Pro
 
-This guide covers building StarReader firmware from source and flashing it to your Xteink X4 / X4 Pro device.
+This guide covers building StarReader Pro firmware from source and flashing it to your Xteink X4 Pro device.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This guide covers building StarReader firmware from source and flashing it to yo
    - Or use VS Code with PlatformIO extension
 
 2. **USB Drivers**
-   - CP210x or CH340 driver (depending on USB-UART chip)
+   - CP210x or CH340 driver (depending on magnetic adapter)
    - Usually auto-installed on modern OSes
 
 3. **esptool** (for advanced flashing)
@@ -19,8 +19,8 @@ This guide covers building StarReader firmware from source and flashing it to yo
 
 ### Hardware Requirements
 
-- Xteink X4 / X4 Pro
-- USB-C data cable (not charge-only!)
+- Xteink X4 Pro
+- Magnetic data adapter / pogo pin cable
 - Computer (Windows/macOS/Linux)
 
 ## Building
@@ -28,7 +28,7 @@ This guide covers building StarReader firmware from source and flashing it to yo
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/starreader-firmware.git
+git clone https://github.com/SHMILYapos/starreader-firmware.git
 cd starreader-firmware
 ```
 
@@ -63,8 +63,8 @@ The compiled firmware binary will be at:
 ### Method 1: PlatformIO (Recommended)
 
 1. Put device into flash mode:
-   - Hold the **BOOT** button (or special key combo)
-   - Connect USB cable to computer
+   - Hold the power button + specific key combo
+   - Connect magnetic data adapter
    - Release button after 2 seconds
 
 2. Flash:
@@ -124,7 +124,7 @@ python -m esptool --chip esp32c3 --port /dev/ttyACM0 write_flash 0x10000 app_bac
 
 ## OTA Updates
 
-StarReader supports Over-The-Air updates via WiFi.
+StarReader supports Over-The-Air updates via WiFi (planned).
 
 ### Switching OTA Partitions
 
@@ -143,15 +143,15 @@ python -m esptool --chip esp32c3 --port /dev/ttyACM0 write_flash 0xE000 otadata_
 
 ### Device not detected
 
-- Try a different USB cable (must be data cable, not charge-only)
-- Try a different USB port
+- Ensure magnetic adapter is properly aligned
+- Try adjusting the magnetic connection
 - Install CP210x/CH340 drivers
 - On Linux: add user to `dialout` group
 
 ### Flash fails
 
 - Lower baud rate: `--baud 115200`
-- Ensure device is in flash mode (hold BOOT while plugging in)
+- Ensure device is in flash mode (correct key combo)
 - Check that the correct port is selected
 
 ### Garbled display
@@ -160,11 +160,17 @@ python -m esptool --chip esp32c3 --port /dev/ttyACM0 write_flash 0xE000 otadata_
 - Try full refresh mode
 - Check that GxEPD2 display class matches your panel
 
-### Buttons not working
+### Touch not working
 
-- Check ADC calibration values in `config.h`
-- Adjust threshold ranges for your hardware revision
-- Verify button polarity
+- Check I2C pin definitions in `config.h`
+- Verify touch IC address (GT911: 0x5D)
+- Try resetting touch panel via RST pin
+
+### Front light not working
+
+- Verify PWM pin assignments
+- Check that front light is enabled in settings
+- Try toggling via `on()` / `off()` functions
 
 ### SD card not detected
 
@@ -187,16 +193,28 @@ Enable verbose logging:
 Serial.printf("Free heap: %d bytes\n", esp_get_free_heap_size());
 ```
 
+### Touch Debugging
+
+```cpp
+TouchEvent event = touch->getLastEvent();
+if (event.gesture != GESTURE_NONE) {
+    Serial.printf("Gesture: %d at (%d, %d)\n",
+                  event.gesture, event.endPoint.x, event.endPoint.y);
+}
+```
+
 ### Adding New Features
 
 1. Create a new `Activity` subclass
 2. Implement lifecycle methods (`onEnter`, `loop`, `render`)
 3. Add navigation entry from existing activity
-4. Test on real hardware
+4. Add touch gesture handling
+5. Test on real hardware
 
 ## Resources
 
 - [ESP32-C3 Datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf)
 - [PlatformIO Documentation](https://docs.platformio.org/)
 - [GxEPD2 Library](https://github.com/ZinggJM/GxEPD2)
+- [GT911 Touch IC Datasheet](https://www.goodix.com/en/product/touch/gt911)
 - [esptool Documentation](https://docs.espressif.com/projects/esptool/)

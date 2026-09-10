@@ -1,9 +1,9 @@
 /**
- * StarReader Firmware - Main Entry Point
+ * StarReader Pro Firmware - Main Entry Point
  * 
- * An open-source e-reader firmware for Xteink X4 / X4 Pro
+ * An open-source e-reader firmware for Xteink X4 Pro
  * 
- * Hardware: ESP32-C3 + 4.26" E-Ink (800x480)
+ * Hardware: ESP32-C3 + 4.3" E-Ink (800x480) + Touch + Front Light
  * 
  * Author: StarReader Community
  * License: MIT
@@ -13,6 +13,8 @@
 #include "config.h"
 #include "hal/display.h"
 #include "hal/input.h"
+#include "hal/touch.h"
+#include "hal/frontlight.h"
 #include "hal/storage.h"
 #include "hal/power.h"
 #include "ui/activity.h"
@@ -22,6 +24,8 @@
 // Global objects
 static HalDisplay* display = nullptr;
 static HalInput* input = nullptr;
+static HalTouch* touch = nullptr;
+static HalFrontLight* frontLight = nullptr;
 static HalStorage* storage = nullptr;
 static HalPowerManager* powerManager = nullptr;
 static ActivityManager* activityManager = nullptr;
@@ -42,9 +46,10 @@ void setup() {
     delay(100);
 
     Serial.println();
-    Serial.println("==============================");
-    Serial.println("  StarReader Firmware v0.1.0  ");
-    Serial.println("==============================");
+    Serial.println("===================================");
+    Serial.println("  StarReader Pro Firmware v0.2.0  ");
+    Serial.println("  for Xteink X4 Pro               ");
+    Serial.println("===================================");
     Serial.println();
 
     // Initialize hardware
@@ -60,6 +65,11 @@ void setup() {
 }
 
 void loop() {
+    // Update touch input
+    if (touch) {
+        touch->update();
+    }
+
     // Update activity
     if (activityManager) {
         activityManager->update();
@@ -86,12 +96,31 @@ void initializeHardware() {
         Serial.println("Display initialized: 800x480");
     }
 
-    // Input
+    // Physical buttons
     input = new HalInput();
     if (!input->begin()) {
         Serial.println("ERROR: Input initialization failed!");
     } else {
-        Serial.println("Input initialized");
+        Serial.println("Physical buttons initialized");
+    }
+
+    // Touchscreen (X4 Pro)
+    touch = new HalTouch();
+    if (!touch->begin()) {
+        Serial.println("WARNING: Touchscreen not detected");
+    } else {
+        Serial.println("Touchscreen initialized (GT911)");
+    }
+
+    // Front light (X4 Pro)
+    frontLight = new HalFrontLight();
+    if (!frontLight->begin()) {
+        Serial.println("WARNING: Front light initialization failed");
+    } else {
+        Serial.println("Front light initialized (dual-tone)");
+        Serial.printf("  Brightness: %d%%, Warmth: %d%%\n",
+                     frontLight->getBrightness(),
+                     frontLight->getWarmth());
     }
 
     // Storage (SD card)
@@ -118,6 +147,13 @@ void initializeHardware() {
     settingsManager = new SettingsManager(storage);
     if (settingsManager->load()) {
         Serial.println("Settings loaded from SD card");
+
+        // Apply saved settings
+        HalDisplay::Orientation orient = (HalDisplay::Orientation)settingsManager->getSettings()->orientation;
+        display->setOrientation(orient);
+
+        frontLight->setBrightness(settingsManager->getSettings()->brightness);
+        frontLight->setWarmth(settingsManager->getSettings()->frontLightWarmth);
     } else {
         Serial.println("Using default settings");
         settingsManager->save();
@@ -156,6 +192,14 @@ void checkAutoSleep() {
         lastActivityTime = millis();
     }
 
+    // Check for touch activity
+    if (touch) {
+        TouchEvent touchEvent = touch->getLastEvent();
+        if (touchEvent.gesture != GESTURE_NONE) {
+            lastActivityTime = millis();
+        }
+    }
+
     // Check timeout
     uint32_t timeout = settingsManager ?
         settingsManager->getSettings()->sleepTimeoutSec * 1000 :
@@ -167,6 +211,11 @@ void checkAutoSleep() {
         // Save state
         if (settingsManager) {
             settingsManager->save();
+        }
+
+        // Turn off front light before sleep
+        if (frontLight) {
+            frontLight->off();
         }
 
         // Enter deep sleep
