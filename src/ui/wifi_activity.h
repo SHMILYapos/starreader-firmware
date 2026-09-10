@@ -1,8 +1,8 @@
 /**
  * StarReader Pro Firmware - WiFi Activity
  * 
- * WiFi 网络配置界面
- * WiFi network configuration screen
+ * WiFi 网络设置界面
+ * WiFi network settings screen
  */
 
 #ifndef STARREADER_UI_WIFI_ACTIVITY_H
@@ -32,22 +32,55 @@ public:
     void render() override;
 
 private:
-    HalTouch* m_touch;
-    HalFrontLight* m_frontLight;
-    SettingsManager* m_settingsManager;
-    bool m_needsRender;
-    bool m_connecting;
+    enum WifiMenuItem {
+        MENU_WIFI_TOGGLE = 0,
+        MENU_SCAN,
+        MENU_CONNECTED,
+        MENU_WEBSERVER,
+        MENU_OTA,
+        MENU_ITEM_COUNT
+    };
+
+    enum ViewMode {
+        VIEW_MAIN = 0,
+        VIEW_SCANNING,
+        VIEW_NETWORK_LIST
+    };
+
     int m_selectedItem;
+    int m_selectedNetwork;
+    ViewMode m_viewMode;
+    bool m_wifiEnabled;
+    bool m_connecting;
+    bool m_scanning;
     uint32_t m_connectStartTime;
+    uint32_t m_scanStartTime;
+    char m_currentSsid[32];
+    char m_currentIp[16];
+    
+    // 扫描结果
+    static const int MAX_NETWORKS = 10;
+    char m_networkSsids[MAX_NETWORKS][32];
+    int m_networkRssi[MAX_NETWORKS];
+    int m_networkCount;
 
-    static const int MENU_START_Y = 50;
-    static const int MENU_ITEM_HEIGHT = 36;
+    static const int STATUS_BAR_HEIGHT = 28;
+    static const int LIST_ITEM_HEIGHT = 48;
+    static const int LIST_PADDING = 10;
 
-    void drawWifiMenu();
+    void drawTitleBar();
+    void drawMainMenu();
+    void drawScanningView();
+    void drawNetworkList();
+    void drawBottomHint();
     void handleButton(ButtonState event);
     void handleTouch(TouchEvent event);
-    void connectToWifi();
+    void toggleWifi();
+    void scanNetworks();
+    void connectToNetwork(int index);
     void startWebServer();
+    void checkOta();
+    void updateScanResults();
 };
 
 #endif // STARREADER_UI_WIFI_ACTIVITY_H

@@ -4,7 +4,7 @@
 
 ### 阅星瞳 X4 Pro 开源墨水屏阅读器固件
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-ESP32--C3-red)
 ![Language](https://img.shields.io/badge/language-C%2B%2B-orange)
@@ -32,25 +32,33 @@
 ### 📚 阅读体验
 - ✅ **TXT 阅读器** - 纯文本阅读，支持翻页、行间距调节
 - ✅ **阅读进度保存** - 自动记录上次阅读位置，一键继续阅读
+- ✅ **阅读菜单** - 底部弹出菜单（目录/书签/设置/夜间模式）
+- ✅ **快捷前光面板** - 顶部下拉，实时调节亮度色温
 - 🚧 **EPUB 支持** - EPUB 2/3 格式支持（开发中）
 - 🚧 **PDF 支持** - PDF 文档阅读（计划中）
 - 🚧 **自定义字体** - 从 SD 卡加载字体文件（计划中）
 
 ### 🎨 显示优化
 - ✅ **多种刷新模式** - 全刷 / 局刷 / 快刷，适配不同场景
-- ✅ **屏幕方向** - 支持竖屏 / 横屏切换
+- ✅ **屏幕方向** - 支持竖屏 / 横屏 / 反向切换
 - ✅ **自动全刷** - 每 N 页自动全刷，消除残影
 - ✅ **状态栏** - 实时显示电量、前光状态、充电状态
+- ✅ **字号调节** - 小 / 中 / 大 / 特大 四档字号
+- ✅ **行间距调节** - 紧凑 / 标准 / 宽松 三档
+- ✅ **页边距调节** - 可调边距，适配不同阅读习惯
 
 ### 💡 前光控制
 - ✅ **双色温前光** - 暖白 + 冷白，无级调光
 - ✅ **亮度调节** - 0-100% PWM 无级调光
 - ✅ **色温调节** - 冷暖自由混合，打造完美阅读光
+- ✅ **前光设置子页** - 完整设置界面
+- ✅ **快捷面板** - 阅读时顶部下拉快捷调节
 - ✅ **预设模式** - 阅读 / 夜间 / 白天三种预设
-- ✅ **快捷开关** - 长按快速开关前光
 
 ### 📡 网络功能
-- 🚧 **WiFi 连接** - 无线联网（开发中）
+- ✅ **WiFi 开关** - 一键开启/关闭 WiFi
+- ✅ **网络扫描** - 自动扫描附近可用 WiFi 网络
+- ✅ **网络列表** - 显示 SSID 和信号强度
 - 🚧 **Web 传书** - 浏览器直接上传书籍（计划中）
 - 🚧 **OTA 升级** - 在线无线升级固件（计划中）
 - 🚧 **蓝牙同步** - 手机蓝牙同步阅读进度（计划中）
@@ -60,12 +68,19 @@
 - ✅ **物理按键** - 侧边翻页按键支持
 - ✅ **手势支持** - 上下左右滑动、长按
 - ✅ **电容 Home 键** - 底部触控 Home 键
+- ✅ **触屏翻页** - 左1/3上一页，右1/3下一页，中间呼出菜单
 
 ### ⚡ 电源管理
 - ✅ **深度休眠** - 超低功耗，超长续航
 - ✅ **自动休眠** - 可配置超时时间
 - ✅ **电池监测** - 电压检测与百分比显示
 - ✅ **磁吸充电检测** - 自动识别充电状态
+
+### 🎯 应用中心
+- ✅ **Apps Hub** - 4x2 图标宫格应用入口
+- ✅ **阅读统计** - 阅读时长/热力图（计划中）
+- ✅ **小游戏** - 2048/数独/五子棋（计划中）
+- ✅ **工具台** - 计算器/时钟/屏保（计划中）
 
 ### 🌐 双语支持
 - ✅ **简体中文** - 默认界面语言
@@ -123,7 +138,7 @@
 3. **烧录固件**
    ```bash
    # 使用 esptool 烧录完整固件
-   python -m esptool --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 starreader-pro-v0.2.0-factory.bin
+   python -m esptool --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 starreader-pro-v0.3.0-factory.bin
    ```
 
    > **Windows 用户**：端口号类似 `COM3`，在设备管理器中查看
@@ -164,13 +179,19 @@ starreader-firmware/
 │   │   ├── storage.h/.cpp    # SD 卡存储
 │   │   └── power.h/.cpp      # 电源管理
 │   ├── ui/                   # 用户界面层
-│   │   ├── activity.h        # Activity 基类
-│   │   ├── home_activity.h/.cpp    # 主菜单
+│   │   ├── activity.h              # Activity 基类（含子Activity浮层）
+│   │   ├── home_activity.h/.cpp    # 主界面（最近在读+2x2入口）
 │   │   ├── library_activity.h/.cpp # 书库/文件浏览
-│   │   ├── reader_activity.h/.cpp  # TXT 阅读器
-│   │   ├── settings_activity.h/.cpp # 设置界面
-│   │   ├── wifi_activity.h/.cpp    # WiFi 配置
-│   │   └── about_activity.h/.cpp  # 关于设备
+│   │   ├── txt_reader_activity.h/.cpp # TXT 阅读器
+│   │   ├── settings_activity.h/.cpp # 设置主界面（分组列表）
+│   │   ├── wifi_activity.h/.cpp    # WiFi 设置（含网络扫描）
+│   │   ├── about_activity.h/.cpp   # 关于设备
+│   │   ├── quick_settings_activity.h/.cpp  # 前光快捷面板
+│   │   ├── apps_hub_activity.h/.cpp       # 应用中心
+│   │   ├── reader_menu_activity.h/.cpp    # 阅读器弹出菜单
+│   │   ├── display_settings_activity.h/.cpp  # 显示设置子页
+│   │   ├── reader_settings_activity.h/.cpp    # 阅读设置子页
+│   │   └── frontlight_settings_activity.h/.cpp # 前光设置子页
 │   └── utils/                # 工具层
 │       ├── settings.h/.cpp    # 设置持久化
 │       └── i18n.h/.cpp       # 国际化双语
@@ -194,7 +215,7 @@ StarReader Pro 采用经典的分层架构，便于维护和扩展：
 ┌─────────────────────────────────┐
 │         应用层 (UI)             │  ← 界面、交互、业务逻辑
 ├─────────────────────────────────┤
-│       活动管理器 (Manager)      │  ← 页面导航、栈管理
+│       活动管理器 (Manager)      │  ← 页面导航、栈管理、子Activity浮层
 ├─────────────────────────────────┤
 │       工具层 (Utils)             │  ← 设置、国际化、工具函数
 ├─────────────────────────────────┤
@@ -208,40 +229,50 @@ StarReader Pro 采用经典的分层架构，便于维护和扩展：
 - **关注点分离**：硬件操作和 UI 逻辑完全分离
 - **可移植性**：HAL 层抽象后，可轻松移植到其他硬件平台
 - **可扩展性**：新增功能只需添加新的 Activity，无需修改核心代码
+- **类 Android 架构**：每个屏幕一个 Activity，子 Activity 作为浮层弹出
 
 ---
 
 ## 🗺️ 开发路线图
 
-### v0.2.0 - 当前版本
+### v0.3.0 - 当前版本（UI完善）
 - [x] 基础 HAL 层（屏幕、按键、前光、SD卡）
 - [x] 电容触控屏驱动
-- [x] 主菜单界面
+- [x] 主界面重构（最近在读+2x2入口）
 - [x] TXT 阅读器
-- [x] 设置界面
-- [x] 书库/文件浏览器
-- [x] 关于设备界面
+- [x] 设置体系完整（5大分组+5个子页）
+  - 显示设置：字号/行距/边距/刷新/方向/自动全刷
+  - 阅读设置：翻页方式/状态栏/进度同步/电量显示
+  - 前光设置：开关/亮度/色温/预设
+  - 网络设置：WiFi开关/扫描/连接/Web传书/OTA
+  - 系统设置：关于设备
+- [x] WiFi 网络扫描列表
+- [x] 前光快捷面板（下拉式）
+- [x] 应用中心 Apps Hub
+- [x] 阅读器弹出菜单
 - [x] 中英双语支持
-- [x] 双色前光控制
 
-### v0.3.0 - 网络功能
-- [ ] WiFi 连接配置
+### v0.4.0 - 网络功能
+- [ ] WiFi 密码输入界面
 - [ ] Web 服务器（无线传书）
 - [ ] OTA 在线升级
+- [ ] WebDAV 客户端
 - [ ] 蓝牙低功耗同步
 
-### v0.4.0 - 阅读增强
+### v0.5.0 - 阅读增强
 - [ ] EPUB 2/3 解析与渲染
 - [ ] 书签管理
 - [ ] 目录跳转
 - [ ] 搜索功能
 - [ ] 自定义字体支持
+- [ ] 阅读统计/热力图
 
-### v0.5.0 - 体验优化
+### v0.6.0 - 体验优化
 - [ ] 睡眠屏幕自定义
-- [ ] 屏保功能
+- [ ] 屏保功能（老黄历/天气）
 - [ ] 手势自定义
 - [ ] 主题系统
+- [ ] 小游戏（2048/数独/五子棋）
 - [ ] 性能优化
 
 ### v1.0.0 - 正式版
@@ -271,6 +302,7 @@ StarReader Pro 采用经典的分层架构，便于维护和扩展：
 - 提交信息使用 [Conventional Commits](https://www.conventionalcommits.org/) 格式
 - 新功能需要添加相应的注释
 - 保持界面的简洁美观，符合墨水屏阅读设备的特性
+- 所有界面支持中英双语
 
 ### 报告问题
 
@@ -283,6 +315,7 @@ StarReader Pro 采用经典的分层架构，便于维护和扩展：
 本项目的诞生离不开以下开源项目和社区的贡献：
 
 - **[CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader)** - 开创性的墨水屏开源固件项目
+- **[CrossMux](https://github.com/crosspoint-reader/crosspoint-reader)** - 中文版本 fork，提供中文字体和微信读书集成参考
 - **[open-x4-epaper](https://github.com/open-x4-epaper)** - 社区逆向工程与 SDK
 - **[sunwoods/Xteink-X4](https://github.com/sunwoods/Xteink-X4)** - 硬件逆向分析
 - **[GxEPD2](https://github.com/ZinggJM/GxEPD2)** - 优秀的墨水屏驱动库
