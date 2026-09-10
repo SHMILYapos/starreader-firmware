@@ -9,9 +9,11 @@
 #include "txt_reader_activity.h"
 #include "settings_activity.h"
 #include "library_activity.h"
+#include "wifi_activity.h"
 #include "about_activity.h"
 #include "../utils/i18n.h"
 #include <string.h>
+#include <cstdio>
 
 HomeActivity::HomeActivity(HalDisplay* display, HalInput* input, HalStorage* storage, HalPowerManager* power,
                            HalTouch* touch, HalFrontLight* frontLight,
@@ -116,6 +118,7 @@ void HomeActivity::drawMenu() {
     const char* menuItems[] = {
         _(STR_CONTINUE_READING),
         _(STR_LIBRARY),
+        "WiFi",
         _(STR_SETTINGS),
         _(STR_ABOUT),
         _(STR_SLEEP)
@@ -294,6 +297,15 @@ void HomeActivity::launchMenuItem(int item) {
                 m_display, m_input, m_storage, m_power,
                 m_touch, m_frontLight, m_settingsManager);
             m_manager->pushActivity(library);
+            break;
+        }
+
+        case MENU_WIFI: {
+            // WiFi 网络设置
+            WifiActivity* wifi = new WifiActivity(
+                m_display, m_input, m_storage, m_power,
+                m_touch, m_frontLight, m_settingsManager);
+            m_manager->pushActivity(wifi);
             break;
         }
 

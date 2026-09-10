@@ -33,6 +33,7 @@ private:
     enum MenuItem {
         MENU_CONTINUE_READING = 0,
         MENU_LIBRARY,
+        MENU_WIFI,
         MENU_SETTINGS,
         MENU_ABOUT,
         MENU_SLEEP,
