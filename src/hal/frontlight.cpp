@@ -28,12 +28,9 @@ HalFrontLight::~HalFrontLight() {
 
 bool HalFrontLight::begin() {
 #ifdef ARDUINO
-    // Configure PWM pins for front light
-    ledcSetup(0, FRONT_LIGHT_PWM_FREQ, FRONT_LIGHT_PWM_RES);
-    ledcSetup(1, FRONT_LIGHT_PWM_FREQ, FRONT_LIGHT_PWM_RES);
-
-    ledcAttachPin(FRONT_LIGHT_PWM_WARM, 0);
-    ledcAttachPin(FRONT_LIGHT_PWM_COOL, 1);
+    // Configure PWM pins for front light (new LEDC API for ESP32-C3)
+    ledcAttach(FRONT_LIGHT_PWM_WARM, FRONT_LIGHT_PWM_FREQ, FRONT_LIGHT_PWM_RES);
+    ledcAttach(FRONT_LIGHT_PWM_COOL, FRONT_LIGHT_PWM_FREQ, FRONT_LIGHT_PWM_RES);
 
     // Start off
     setBrightness(0);
@@ -56,8 +53,8 @@ bool HalFrontLight::begin() {
 void HalFrontLight::end() {
     off();
 #ifdef ARDUINO
-    ledcDetachPin(FRONT_LIGHT_PWM_WARM);
-    ledcDetachPin(FRONT_LIGHT_PWM_COOL);
+    ledcDetach(FRONT_LIGHT_PWM_WARM);
+    ledcDetach(FRONT_LIGHT_PWM_COOL);
 #endif
     m_initialized = false;
     m_enabled = false;
@@ -183,20 +180,16 @@ uint8_t HalFrontLight::getCoolLEDValue() const {
     return (m_coolPwm * 100) / 1023;
 }
 
-void HalFrontLight::setPwmChannel(uint8_t channel, uint16_t value) {
-#ifdef ARDUINO
-    ledcWrite(channel, value);
-#endif
-}
-
 void HalFrontLight::updatePwm() {
     if (!m_initialized) return;
 
     if (!m_enabled) {
         m_warmPwm = 0;
         m_coolPwm = 0;
-        setPwmChannel(0, 0);
-        setPwmChannel(1, 0);
+#ifdef ARDUINO
+        ledcWrite(FRONT_LIGHT_PWM_WARM, 0);
+        ledcWrite(FRONT_LIGHT_PWM_COOL, 0);
+#endif
         return;
     }
 
@@ -211,6 +204,8 @@ void HalFrontLight::updatePwm() {
     m_warmPwm = (uint16_t)(totalBrightness * warmRatio);
     m_coolPwm = (uint16_t)(totalBrightness * coolRatio);
 
-    setPwmChannel(0, m_warmPwm);
-    setPwmChannel(1, m_coolPwm);
+#ifdef ARDUINO
+    ledcWrite(FRONT_LIGHT_PWM_WARM, m_warmPwm);
+    ledcWrite(FRONT_LIGHT_PWM_COOL, m_coolPwm);
+#endif
 }

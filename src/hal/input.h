@@ -70,6 +70,7 @@ private:
         ButtonId id;
         bool pressed;
         uint32_t pressStartTime;
+        uint32_t pressDuration;
         uint8_t debounceCount;
         bool longPressFired;
     };

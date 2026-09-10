@@ -27,11 +27,12 @@ bool HalPowerManager::begin() {
     pinMode(BATTERY_ADC_PIN, INPUT);
     analogReadResolution(12);
 
-    // Configure USB detect pin
-    pinMode(USB_DETECT_PIN, INPUT);
+    // Configure USB/magnetic detect pin
+    pinMode(MAGNETIC_DET_PIN, INPUT);
 
     // Configure power button as wakeup source
-    esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN_POWER_PIN, 0);
+    // TODO: ESP32-C3 GPIO wakeup configuration
+    // esp_deep_sleep_enable_gpio_wakeup(BTN_POWER_PIN, ESP_GPIO_WAKEUP_GPIO_LOW);
 
     m_bootTime = millis();
     m_initialized = true;
@@ -100,8 +101,8 @@ ChargingStatus HalPowerManager::getChargingStatus() {
 
 bool HalPowerManager::isUsbConnected() {
 #ifdef ARDUINO
-    // USB detect pin - HIGH when USB connected
-    return digitalRead(USB_DETECT_PIN) == HIGH;
+    // Magnetic/USB detect pin - HIGH when connected
+    return digitalRead(MAGNETIC_DET_PIN) == HIGH;
 #else
     return false;
 #endif
@@ -113,7 +114,8 @@ void HalPowerManager::enterDeepSleep(uint32_t timeoutMs) {
     // ... (application should save state before calling this)
 
     // Configure wakeup sources
-    esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN_POWER_PIN, 0);
+    // TODO: ESP32-C3 GPIO wakeup configuration
+    // esp_deep_sleep_enable_gpio_wakeup(BTN_POWER_PIN, ESP_GPIO_WAKEUP_GPIO_LOW);
 
     if (timeoutMs > 0) {
         esp_sleep_enable_timer_wakeup(timeoutMs * 1000ULL);

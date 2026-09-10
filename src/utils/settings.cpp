@@ -138,6 +138,21 @@ void SettingsManager::setSleepTimeout(uint16_t seconds) {
     save();
 }
 
+void SettingsManager::setLanguage(uint8_t lang) {
+    m_settings.language = lang;
+    save();
+}
+
+void SettingsManager::setTouchEnabled(bool enabled) {
+    m_settings.touchEnabled = enabled ? 1 : 0;
+    save();
+}
+
+void SettingsManager::setStatusBarEnabled(bool enabled) {
+    m_settings.statusBarEnabled = enabled ? 1 : 0;
+    save();
+}
+
 // ===== Internal =====
 
 uint32_t SettingsManager::calculateChecksum(const StarReaderSettings* settings) {

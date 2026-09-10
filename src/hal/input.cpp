@@ -18,6 +18,7 @@ HalInput::HalInput()
         m_buttons[i].id = BTN_NONE;
         m_buttons[i].pressed = false;
         m_buttons[i].pressStartTime = 0;
+        m_buttons[i].pressDuration = 0;
         m_buttons[i].debounceCount = 0;
         m_buttons[i].longPressFired = false;
     }
@@ -70,10 +71,10 @@ void HalInput::update() {
     bool powerPressed = (digitalRead(BTN_POWER_PIN) == LOW);
 
     // Update button states with debouncing
-    // Front buttons (GPIO1)
-    ButtonId frontButtons[] = {BTN_BACK, BTN_CONFIRM, BTN_LEFT, BTN_RIGHT};
-    for (int i = 0; i < 4; i++) {
-        ButtonId expectedBtn = frontButtons[i];
+    // Side buttons (GPIO1) - BTN_LEFT, BTN_RIGHT
+    ButtonId sideButtons[] = {BTN_LEFT, BTN_RIGHT};
+    for (int i = 0; i < 2; i++) {
+        ButtonId expectedBtn = sideButtons[i];
         bool isNowPressed = (btn1 == expectedBtn);
         ButtonTrack* track = &m_buttons[i];
 
@@ -111,12 +112,12 @@ void HalInput::update() {
         }
     }
 
-    // Side buttons (GPIO2)
-    ButtonId sideButtons[] = {BTN_VOL_UP, BTN_VOL_DOWN};
+    // Additional buttons (GPIO2) - BTN_CONFIRM, BTN_BACK
+    ButtonId frontButtons[] = {BTN_CONFIRM, BTN_BACK};
     for (int i = 0; i < 2; i++) {
-        ButtonId expectedBtn = sideButtons[i];
+        ButtonId expectedBtn = frontButtons[i];
         bool isNowPressed = (btn2 == expectedBtn);
-        ButtonTrack* track = &m_buttons[4 + i];
+        ButtonTrack* track = &m_buttons[2 + i];
 
         if (isNowPressed != track->pressed) {
             track->debounceCount++;
@@ -234,15 +235,13 @@ uint16_t HalInput::readAdcPin(uint8_t pin) {
 
 ButtonId HalInput::identifyButton(uint8_t adcPin, uint16_t value) {
     if (adcPin == 1) {
-        // GPIO1 - 4 front buttons
-        if (value >= BTN_BACK_MIN && value <= BTN_BACK_MAX) return BTN_BACK;
-        if (value >= BTN_CONFIRM_MIN && value <= BTN_CONFIRM_MAX) return BTN_CONFIRM;
+        // GPIO1 - side buttons (Left/Right page turn)
         if (value >= BTN_LEFT_MIN && value <= BTN_LEFT_MAX) return BTN_LEFT;
         if (value >= BTN_RIGHT_MIN && value <= BTN_RIGHT_MAX) return BTN_RIGHT;
     } else if (adcPin == 2) {
-        // GPIO2 - 2 side buttons
-        if (value >= BTN_VOLUP_MIN && value <= BTN_VOLUP_MAX) return BTN_VOL_UP;
-        if (value >= BTN_VOLDOWN_MIN && value <= BTN_VOLDOWN_MAX) return BTN_VOL_DOWN;
+        // GPIO2 - additional buttons (Confirm/Back)
+        if (value >= BTN_CONFIRM_MIN && value <= BTN_CONFIRM_MAX) return BTN_CONFIRM;
+        if (value >= BTN_BACK_MIN && value <= BTN_BACK_MAX) return BTN_BACK;
     }
     return BTN_NONE;
 }
