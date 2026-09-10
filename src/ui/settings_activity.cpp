@@ -10,6 +10,7 @@
 #include "about_activity.h"
 #include "display_settings_activity.h"
 #include "frontlight_settings_activity.h"
+#include "reader_settings_activity.h"
 #include <string.h>
 #include <cstdio>
 
@@ -201,6 +202,15 @@ void SettingsActivity::launchGroup(int group) {
             break;
         }
 
+        case GROUP_READER: {
+            // 阅读设置子页
+            ReaderSettingsActivity* readerSettings = new ReaderSettingsActivity(
+                m_display, m_input, m_storage, m_power,
+                m_touch, m_frontLight, m_settingsManager);
+            m_manager->pushActivity(readerSettings);
+            break;
+        }
+
         case GROUP_FRONTLIGHT: {
             // 前光设置子页
             FrontLightSettingsActivity* flSettings = new FrontLightSettingsActivity(
@@ -228,7 +238,6 @@ void SettingsActivity::launchGroup(int group) {
         }
 
         default:
-            // 阅读设置 - 子页待开发
             requestUpdate();
             break;
     }
