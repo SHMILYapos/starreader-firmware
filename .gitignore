@@ -1,0 +1,33 @@
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+pioce/
+
+# Build artifacts
+*.o
+*.a
+*.elf
+*.bin
+*.hex
+*.lst
+*.map
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SDK / vendor
+lib/framework/
+open-x4-sdk/
+
+# Calibration data
+calibration.bin
+settings_backup.bin
