@@ -1,74 +1,42 @@
 /**
  * StarReader Pro Firmware - Settings Activity Implementation
  * 
- * 设置界面实现（双语支持）
+ * 设置主界面：分组列表
  */
 
 #include "settings_activity.h"
 #include "../config.h"
-#include "../utils/i18n.h"
+#include "wifi_activity.h"
+#include "about_activity.h"
 #include <string.h>
+#include <cstdio>
 
 SettingsActivity::SettingsActivity(HalDisplay* display, HalInput* input, HalStorage* storage, 
                                    HalPowerManager* power, HalTouch* touch,
                                    HalFrontLight* frontLight,
                                    SettingsManager* settingsManager)
     : Activity(display, input, storage, power)
-    , m_selectedItem(0)
-    , m_needsRender(true)
-    , m_touch(touch)
-    , m_frontLight(frontLight)
-    , m_settingsManager(settingsManager)
-    , m_frontLightOn(false)
-    , m_brightness(50)
-    , m_warmth(50)
-    , m_fontSize(1)
-    , m_orientation(1)
-    , m_refreshMode(1)
-    , m_lineSpacing(1)
-    , m_justification(1)
-    , m_sleepTimeoutMin(5)
-    , m_autoRefreshPages(50) {
+    , m_selectedIndex(0)
+    , m_scrollOffset(0) {
 }
 
 SettingsActivity::~SettingsActivity() {
 }
 
 void SettingsActivity::onEnter() {
-    m_selectedItem = 0;
-    m_needsRender = true;
-
-    // Load current settings
-    if (m_settingsManager) {
-        StarReaderSettings* s = m_settingsManager->getSettings();
-        m_frontLightOn = s->frontLightOn;
-        m_brightness = s->brightness;
-        m_warmth = s->frontLightWarmth;
-        m_fontSize = s->fontSize;
-        m_orientation = s->orientation;
-        m_refreshMode = s->refreshMode;
-        m_lineSpacing = s->lineSpacing;
-        m_justification = s->justification;
-        m_sleepTimeoutMin = s->sleepTimeoutSec / 60;
-        m_autoRefreshPages = s->autoRefreshPages;
-    } else if (m_frontLight) {
-        m_frontLightOn = m_frontLight->isOn();
-        m_brightness = m_frontLight->getBrightness();
-        m_warmth = m_frontLight->getWarmth();
-    }
+    m_selectedIndex = 0;
+    m_scrollOffset = 0;
+    requestUpdate();
 }
 
 void SettingsActivity::onExit() {
-    // Save settings
-    applySettings();
 }
 
 void SettingsActivity::onResume() {
-    m_needsRender = true;
+    requestUpdate();
 }
 
 void SettingsActivity::loop() {
-    // Handle physical buttons
     m_input->update();
     ButtonState event = m_input->getLastEvent();
 
@@ -76,7 +44,6 @@ void SettingsActivity::loop() {
         handleButton(event);
     }
 
-    // Handle touch
     if (m_touch) {
         TouchEvent touchEvent = m_touch->getLastEvent();
         if (touchEvent.gesture != GESTURE_NONE) {
@@ -86,139 +53,104 @@ void SettingsActivity::loop() {
 }
 
 void SettingsActivity::render() {
-    if (!m_needsRender) return;
+    if (!needsRender()) return;
 
     m_display->clear(0xFF);
-    int16_t width = m_display->getRotatedWidth();
-    int16_t height = m_display->getRotatedHeight();
 
-    // Title bar
-    m_display->fillRect(0, 0, width, 35, 0x00);
-    const char* title = _(STR_SETTINGS_TITLE);
-    int16_t titleWidth = m_display->getStringWidth(title, 2);
-    m_display->drawString((width - titleWidth) / 2, 8, title, 0xFF, 2);
-
-    drawSettings();
-
-    // Footer
-    const char* hint;
-    if (I18n::getLanguage() == LANG_CN) {
-        hint = "上下键: 选择  左右键: 调节  返回键: 退出";
-    } else {
-        hint = "Up/Down: Select  Left/Right: Adjust  Back: Exit";
-    }
-    int16_t hintWidth = m_display->getStringWidth(hint, 1);
-    m_display->drawString((width - hintWidth) / 2, height - 18, hint, 0x00, 1);
+    drawTitleBar();
+    drawSettingsList();
+    drawBottomHint();
 
     m_display->refresh(HalDisplay::FULL_REFRESH);
-    m_needsRender = false;
+    clearRenderFlag();
 }
 
-void SettingsActivity::drawSettings() {
-    // 获取双语设置项名称
-    const char* settingNames[] = {
-        // 前光设置
-        _(STR_FRONT_LIGHT),
-        "  " STR_BRIGHTNESS,
-        "  " STR_WARMTH,
-        "  " STR_PRESETS,
-        // 显示设置
-        _(STR_DISPLAY),
-        "  " STR_FONT_SIZE,
-        "  " STR_ORIENTATION,
-        "  " STR_REFRESH_MODE,
-        // 阅读设置
-        _(STR_READER),
-        "  " STR_LINE_SPACING,
-        "  " STR_JUSTIFICATION,
-        // 电源设置
-        _(STR_POWER),
-        "  " STR_SLEEP_TIMEOUT,
-        "  " STR_AUTO_REFRESH,
-        // 系统设置
-        _(STR_SYSTEM),
-        "  " STR_LANGUAGE,
-        "  " STR_ABOUT
+void SettingsActivity::drawTitleBar() {
+    int16_t width = m_display->getRotatedWidth();
+
+    m_display->fillRect(0, 0, width, STATUS_BAR_HEIGHT, 0x00);
+
+    // 返回箭头
+    m_display->drawString(10, 6, "< 返回", 0xFF, 1);
+
+    // 标题
+    const char* title = "设置";
+    int16_t titleWidth = m_display->getStringWidth(title, 2);
+    m_display->drawString((width - titleWidth) / 2, 4, title, 0xFF, 2);
+}
+
+void SettingsActivity::drawSettingsList() {
+    int16_t width = m_display->getRotatedWidth();
+
+    const char* groupNames[] = {
+        "显示",
+        "阅读",
+        "前光",
+        "网络",
+        "系统"
     };
 
-    for (int i = 0; i < SETTING_COUNT; i++) {
-        int y = MENU_START_Y + i * MENU_ITEM_HEIGHT;
+    const char* groupSubtitles[] = {
+        "字体、刷新、方向",
+        "字号、行距、排版",
+        "亮度、色温、预设",
+        "WiFi、传书、OTA",
+        "语言、关于、升级"
+    };
 
-        // Section headers (group headers)
-        bool isHeader = (i == SETTING_FRONT_LIGHT_ON || i == SETTING_FONT_SIZE || 
-                         i == SETTING_LINE_SPACING || i == SETTING_SLEEP_TIMEOUT);
+    int startY = STATUS_BAR_HEIGHT + LIST_PADDING;
 
-        // Highlight selected
-        if (i == m_selectedItem) {
-            m_display->fillRect(5, y, 470, MENU_ITEM_HEIGHT - 4, 0x00);
-            m_display->drawString(15, y + 8, settingNames[i], 0xFF, 1);
-            
-            // Draw slider for brightness/warmth
-            if (i == SETTING_BRIGHTNESS || i == SETTING_WARMTH) {
-                // Skip text value, use slider instead
-            } else {
-                m_display->drawString(320, y + 8, getSettingValueText(i), 0xFF, 1);
-            }
+    for (int i = 0; i < GROUP_COUNT; i++) {
+        int y = startY + i * LIST_ITEM_HEIGHT;
+
+        bool selected = (i == m_selectedIndex);
+
+        if (selected) {
+            m_display->fillRect(LIST_PADDING, y, width - 2 * LIST_PADDING, LIST_ITEM_HEIGHT - 5, 0x00);
+            m_display->drawString(LIST_PADDING + 15, y + 10, groupNames[i], 0xFF, 2);
+            m_display->drawString(LIST_PADDING + 15, y + 30, groupSubtitles[i], 0xCC, 1);
+            m_display->drawString(width - 40, y + 18, ">", 0xFF, 2);
         } else {
-            uint8_t color = isHeader ? 0x00 : 0x40;  // Headers darker
-            m_display->drawString(15, y + 8, settingNames[i], color, 1);
-            
-            if (i == SETTING_BRIGHTNESS || i == SETTING_WARMTH) {
-                // Draw slider preview
-                int sliderY = y + 14;
-                int sliderX = 320;
-                int sliderW = 140;
-                
-                // Slider background
-                m_display->drawRect(sliderX, sliderY, sliderW, 8, 0x00);
-                
-                // Slider fill
-                int value = (i == SETTING_BRIGHTNESS) ? m_brightness : m_warmth;
-                int fillW = (sliderW * value) / 100;
-                m_display->fillRect(sliderX + 1, sliderY + 1, fillW - 2, 6, 0x00);
-            } else {
-                m_display->drawString(320, y + 8, getSettingValueText(i), 0x40, 1);
-            }
+            m_display->drawString(LIST_PADDING + 15, y + 10, groupNames[i], 0x00, 2);
+            m_display->drawString(LIST_PADDING + 15, y + 30, groupSubtitles[i], 0x60, 1);
+            m_display->drawString(width - 40, y + 18, ">", 0x00, 2);
         }
     }
 }
 
-void SettingsActivity::drawSlider(int y, const char* label, int value, int maxValue) {
-    // Reserved for future slider UI
-    (void)y; (void)label; (void)value; (void)maxValue;
+void SettingsActivity::drawBottomHint() {
+    int16_t width = m_display->getRotatedWidth();
+    int16_t height = m_display->getRotatedHeight();
+
+    const char* hint = "上下键: 选择  确认: 进入  返回: 返回主页";
+    int16_t hintWidth = m_display->getStringWidth(hint, 1);
+    m_display->drawString((width - hintWidth) / 2, height - 18, hint, 0x60, 1);
 }
 
 void SettingsActivity::handleButton(ButtonState event) {
     switch (event.id) {
         case BTN_VOL_UP:
-            if (m_selectedItem > 0) {
-                m_selectedItem--;
-                m_needsRender = true;
+        case BTN_LEFT:
+            if (m_selectedIndex > 0) {
+                m_selectedIndex--;
+                requestUpdate();
             }
             break;
 
         case BTN_VOL_DOWN:
-            if (m_selectedItem < SETTING_COUNT - 1) {
-                m_selectedItem++;
-                m_needsRender = true;
+        case BTN_RIGHT:
+            if (m_selectedIndex < GROUP_COUNT - 1) {
+                m_selectedIndex++;
+                requestUpdate();
             }
             break;
 
-        case BTN_LEFT:
-            cycleSetting(m_selectedItem, -1);
-            m_needsRender = true;
-            break;
-
-        case BTN_RIGHT:
-            cycleSetting(m_selectedItem, 1);
-            m_needsRender = true;
+        case BTN_CONFIRM:
+            launchGroup(m_selectedIndex);
             break;
 
         case BTN_BACK:
-            if (m_manager) {
-                applySettings();
-                m_manager->goBack();
-            }
+            if (m_manager) m_manager->goBack();
             break;
 
         default:
@@ -227,36 +159,26 @@ void SettingsActivity::handleButton(ButtonState event) {
 }
 
 void SettingsActivity::handleTouch(TouchEvent event) {
+    int16_t width = m_display->getRotatedWidth();
+
     switch (event.gesture) {
-        case GESTURE_TAP:
-            // Tap on a setting item to select it
-            if (event.endPoint.y > MENU_START_Y && event.endPoint.y < MENU_START_Y + SETTING_COUNT * MENU_ITEM_HEIGHT) {
-                int idx = (event.endPoint.y - MENU_START_Y) / MENU_ITEM_HEIGHT;
-                if (idx >= 0 && idx < SETTING_COUNT) {
-                    m_selectedItem = idx;
-                    m_needsRender = true;
+        case GESTURE_TAP: {
+            int y = event.endPoint.y;
+            int startY = STATUS_BAR_HEIGHT + LIST_PADDING;
+
+            for (int i = 0; i < GROUP_COUNT; i++) {
+                int itemY = startY + i * LIST_ITEM_HEIGHT;
+                if (y >= itemY && y < itemY + LIST_ITEM_HEIGHT - 5) {
+                    m_selectedIndex = i;
+                    launchGroup(i);
+                    break;
                 }
             }
             break;
-
-        case GESTURE_SWIPE_DOWN:
-            // Swipe down = adjust value down
-            cycleSetting(m_selectedItem, -1);
-            m_needsRender = true;
-            break;
-
-        case GESTURE_SWIPE_UP:
-            // Swipe up = adjust value up
-            cycleSetting(m_selectedItem, 1);
-            m_needsRender = true;
-            break;
+        }
 
         case GESTURE_SWIPE_RIGHT:
-            // Swipe right = go back
-            if (m_manager) {
-                applySettings();
-                m_manager->goBack();
-            }
+            if (m_manager) m_manager->goBack();
             break;
 
         default:
@@ -264,203 +186,30 @@ void SettingsActivity::handleTouch(TouchEvent event) {
     }
 }
 
-void SettingsActivity::cycleSetting(int item, int direction) {
-    switch (item) {
-        case SETTING_FRONT_LIGHT_ON:
-            m_frontLightOn = !m_frontLightOn;
-            if (m_frontLight) {
-                if (m_frontLightOn) m_frontLight->on();
-                else m_frontLight->off();
-            }
-            break;
+void SettingsActivity::launchGroup(int group) {
+    if (!m_manager) return;
 
-        case SETTING_BRIGHTNESS: {
-            int newBrightness = m_brightness + direction * 5;
-            if (newBrightness < 0) newBrightness = 0;
-            if (newBrightness > 100) newBrightness = 100;
-            m_brightness = newBrightness;
-            if (m_frontLight) {
-                m_frontLight->setBrightness(m_brightness);
-                if (m_brightness > 0 && !m_frontLightOn) {
-                    m_frontLightOn = true;
-                    m_frontLight->on();
-                }
-            }
+    switch (group) {
+        case GROUP_NETWORK: {
+            WifiActivity* wifi = new WifiActivity(
+                m_display, m_input, m_storage, m_power,
+                m_touch, m_frontLight, m_settingsManager);
+            m_manager->pushActivity(wifi);
             break;
         }
 
-        case SETTING_WARMTH: {
-            int newWarmth = m_warmth + direction * 5;
-            if (newWarmth < 0) newWarmth = 0;
-            if (newWarmth > 100) newWarmth = 100;
-            m_warmth = newWarmth;
-            if (m_frontLight) {
-                m_frontLight->setWarmth(m_warmth);
-            }
+        case GROUP_SYSTEM: {
+            // 系统设置 - 关于页面占位
+            AboutActivity* about = new AboutActivity(
+                m_display, m_input, m_storage, m_power,
+                m_touch, m_frontLight, m_settingsManager);
+            m_manager->pushActivity(about);
             break;
         }
-
-        case SETTING_PRESETS:
-            // Cycle through presets
-            if (m_frontLight) {
-                static int presetIdx = 0;
-                presetIdx = (presetIdx + 1) % 3;
-                switch (presetIdx) {
-                    case 0: m_frontLight->setPresetReading(); break;
-                    case 1: m_frontLight->setPresetNight(); break;
-                    case 2: m_frontLight->setPresetDay(); break;
-                }
-                m_brightness = m_frontLight->getBrightness();
-                m_warmth = m_frontLight->getWarmth();
-                m_frontLightOn = true;
-            }
-            break;
-
-        case SETTING_FONT_SIZE:
-            m_fontSize = (m_fontSize + direction + 4) % 4;  // 0-3
-            break;
-
-        case SETTING_ORIENTATION:
-            m_orientation = (m_orientation + direction + 4) % 4;
-            m_display->setOrientation((HalDisplay::Orientation)m_orientation);
-            break;
-
-        case SETTING_REFRESH_MODE:
-            m_refreshMode = (m_refreshMode + direction + 3) % 3;
-            break;
-
-        case SETTING_LINE_SPACING:
-            m_lineSpacing = (m_lineSpacing + direction + 3) % 3;
-            break;
-
-        case SETTING_JUSTIFICATION:
-            m_justification = (m_justification + direction + 2) % 2;
-            break;
-
-        case SETTING_SLEEP_TIMEOUT:
-            if (direction > 0) {
-                if (m_sleepTimeoutMin >= 60) m_sleepTimeoutMin = 1;
-                else m_sleepTimeoutMin *= 2;
-            } else {
-                if (m_sleepTimeoutMin <= 1) m_sleepTimeoutMin = 60;
-                else m_sleepTimeoutMin /= 2;
-            }
-            break;
-
-        case SETTING_AUTO_REFRESH:
-            m_autoRefreshPages += direction * 10;
-            if (m_autoRefreshPages < 10) m_autoRefreshPages = 10;
-            if (m_autoRefreshPages > 200) m_autoRefreshPages = 200;
-            break;
-
-        case SETTING_LANGUAGE:
-            // 切换语言
-            I18n::toggleLanguage();
-            if (m_settingsManager) {
-                m_settingsManager->setLanguage(I18n::getLanguage());
-            }
-            m_needsRender = true;
-            break;
-
-        case SETTING_ABOUT:
-            // TODO: 跳转到关于界面
-            break;
-    }
-}
-
-const char* SettingsActivity::getSettingValueText(int item) {
-    static char buf[32];
-
-    switch (item) {
-        case SETTING_FRONT_LIGHT_ON:
-            return m_frontLightOn ? "ON / 开" : "OFF / 关";
-
-        case SETTING_BRIGHTNESS:
-            snprintf(buf, sizeof(buf), "%d%%", m_brightness);
-            return buf;
-
-        case SETTING_WARMTH:
-            snprintf(buf, sizeof(buf), "%d%%", m_warmth);
-            return buf;
-
-        case SETTING_PRESETS:
-            return _(STR_PRESET_READING);
-
-        case SETTING_FONT_SIZE:
-            switch (m_fontSize) {
-                case 0: return _(STR_SMALL);
-                case 1: return _(STR_MEDIUM);
-                case 2: return _(STR_LARGE);
-                case 3: return _(STR_XLARGE);
-                default: return "?";
-            }
-
-        case SETTING_ORIENTATION:
-            switch (m_orientation) {
-                case 0: return _(STR_PORTRAIT);
-                case 1: return _(STR_LANDSCAPE);
-                case 2: return _(STR_PORTRAIT);
-                case 3: return _(STR_LANDSCAPE);
-                default: return "?";
-            }
-
-        case SETTING_REFRESH_MODE:
-            switch (m_refreshMode) {
-                case 0: return _(STR_FULL);
-                case 1: return _(STR_PARTIAL);
-                case 2: return _(STR_FAST);
-                default: return "?";
-            }
-
-        case SETTING_LINE_SPACING:
-            switch (m_lineSpacing) {
-                case 0: return _(STR_TIGHT);
-                case 1: return _(STR_NORMAL);
-                case 2: return _(STR_RELAXED);
-                default: return "?";
-            }
-
-        case SETTING_JUSTIFICATION:
-            return m_justification ? _(STR_JUSTIFIED) : _(STR_LEFT);
-
-        case SETTING_SLEEP_TIMEOUT:
-            if (m_sleepTimeoutMin >= 60) {
-                return _(STR_NEVER);
-            } else {
-                snprintf(buf, sizeof(buf), "%d %s", m_sleepTimeoutMin, _(STR_MINUTES));
-                return buf;
-            }
-
-        case SETTING_AUTO_REFRESH:
-            snprintf(buf, sizeof(buf), "%d %s", m_autoRefreshPages, _(STR_PAGES));
-            return buf;
-
-        case SETTING_LANGUAGE:
-            return I18n::getLanguage() == LANG_CN ? "中文" : "English";
-
-        case SETTING_ABOUT:
-            return "v0.2.0 Pro";
 
         default:
-            return "";
+            // 显示/阅读/前光 - 子页待开发
+            requestUpdate();
+            break;
     }
-}
-
-void SettingsActivity::applySettings() {
-    if (!m_settingsManager) return;
-
-    StarReaderSettings* s = m_settingsManager->getSettings();
-    s->frontLightOn = m_frontLightOn ? 1 : 0;
-    s->brightness = m_brightness;
-    s->frontLightWarmth = m_warmth;
-    s->fontSize = m_fontSize;
-    s->orientation = m_orientation;
-    s->refreshMode = m_refreshMode;
-    s->lineSpacing = m_lineSpacing;
-    s->justification = m_justification;
-    s->sleepTimeoutSec = m_sleepTimeoutMin * 60;
-    s->autoRefreshPages = m_autoRefreshPages;
-    s->language = I18n::getLanguage();
-
-    m_settingsManager->save();
 }

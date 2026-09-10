@@ -1,7 +1,8 @@
 /**
- * StarReader Pro Firmware - Home Activity (Main Menu)
+ * StarReader Pro Firmware - Home Activity (Main Screen)
  * 
- * Main menu with touch support and status display
+ * 主页：最近在读 + 四大入口（书架/文件/Apps/设置）
+ * Home: Continue reading card + 4 main entries
  */
 
 #ifndef STARREADER_UI_HOME_ACTIVITY_H
@@ -30,33 +31,29 @@ public:
     void render() override;
 
 private:
-    enum MenuItem {
-        MENU_CONTINUE_READING = 0,
-        MENU_LIBRARY,
-        MENU_WIFI,
-        MENU_SETTINGS,
-        MENU_ABOUT,
-        MENU_SLEEP,
+    enum MainMenu {
+        MENU_CONTINUE = 0,    // 最近在读（大卡片）
+        MENU_LIBRARY,         // 书架
+        MENU_FILES,           // 文件
+        MENU_APPS,            // Apps
+        MENU_SETTINGS,        // 设置
         MENU_COUNT
     };
 
-    int m_selectedItem;
-    uint32_t m_lastButtonTime;
-    bool m_needsRender;
+    int m_selectedIndex;
 
-    // Hardware references
-    HalTouch* m_touch;
-    HalFrontLight* m_frontLight;
-    SettingsManager* m_settingsManager;
-
-    // UI layout constants
-    static const int MENU_START_Y = 80;
-    static const int MENU_ITEM_HEIGHT = 55;
-    static const int MENU_ITEM_PADDING = 20;
+    // 布局常量
+    static const int STATUS_BAR_HEIGHT = 28;
+    static const int CARD_PADDING = 15;
+    static const int CONTINUE_CARD_HEIGHT = 110;
+    static const int GRID_GAP = 10;
+    static const int GRID_ROWS = 2;
+    static const int GRID_COLS = 2;
 
     void drawStatusBar();
-    void drawMenu();
-    void drawFooter();
+    void drawContinueCard();
+    void drawGridMenu();
+    void drawBottomHint();
     void handleButton(ButtonState event);
     void handleTouch(TouchEvent event);
     void launchMenuItem(int item);

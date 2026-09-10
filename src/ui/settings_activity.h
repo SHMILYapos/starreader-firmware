@@ -1,7 +1,8 @@
 /**
  * StarReader Pro Firmware - Settings Activity
  * 
- * 设置菜单界面（双语支持）
+ * 设置主界面：分组列表（显示/阅读/前光/网络/系统）
+ * Settings: grouped list - Display / Reader / Frontlight / Network / System
  */
 
 #ifndef STARREADER_UI_SETTINGS_ACTIVITY_H
@@ -31,63 +32,28 @@ public:
     void render() override;
 
 private:
-    enum SettingsItem {
-        // Front Light group
-        SETTING_FRONT_LIGHT_ON = 0,
-        SETTING_BRIGHTNESS,
-        SETTING_WARMTH,
-        SETTING_PRESETS,
-
-        // Display group
-        SETTING_FONT_SIZE,
-        SETTING_ORIENTATION,
-        SETTING_REFRESH_MODE,
-
-        // Reader group
-        SETTING_LINE_SPACING,
-        SETTING_JUSTIFICATION,
-
-        // Power group
-        SETTING_SLEEP_TIMEOUT,
-        SETTING_AUTO_REFRESH,
-
-        // System
-        SETTING_LANGUAGE,
-        SETTING_ABOUT,
-        SETTING_COUNT
+    enum SettingsGroup {
+        GROUP_DISPLAY = 0,    // 显示
+        GROUP_READER,         // 阅读
+        GROUP_FRONTLIGHT,     // 前光
+        GROUP_NETWORK,        // 网络
+        GROUP_SYSTEM,         // 系统
+        GROUP_COUNT
     };
 
-    int m_selectedItem;
-    bool m_needsRender;
+    int m_selectedIndex;
+    int m_scrollOffset;
 
-    // Hardware references
-    HalTouch* m_touch;
-    HalFrontLight* m_frontLight;
-    SettingsManager* m_settingsManager;
+    static const int STATUS_BAR_HEIGHT = 28;
+    static const int LIST_ITEM_HEIGHT = 48;
+    static const int LIST_PADDING = 10;
 
-    // Settings values
-    bool m_frontLightOn;
-    uint8_t m_brightness;
-    uint8_t m_warmth;
-    uint8_t m_fontSize;
-    uint8_t m_orientation;
-    uint8_t m_refreshMode;
-    uint8_t m_lineSpacing;
-    uint8_t m_justification;
-    uint8_t m_language;
-    uint16_t m_sleepTimeoutMin;
-    uint16_t m_autoRefreshPages;
-
-    static const int MENU_START_Y = 50;
-    static const int MENU_ITEM_HEIGHT = 32;
-
-    void drawSettings();
-    void drawSlider(int y, const char* label, int value, int maxValue);
+    void drawTitleBar();
+    void drawSettingsList();
+    void drawBottomHint();
     void handleButton(ButtonState event);
     void handleTouch(TouchEvent event);
-    void cycleSetting(int item, int direction);
-    const char* getSettingValueText(int item);
-    void applySettings();
+    void launchGroup(int group);
 };
 
 #endif // STARREADER_UI_SETTINGS_ACTIVITY_H
