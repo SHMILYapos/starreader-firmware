@@ -9,6 +9,7 @@
 #include "txt_reader_activity.h"
 #include "settings_activity.h"
 #include "library_activity.h"
+#include "apps_hub_activity.h"
 #include "wifi_activity.h"
 #include "../utils/i18n.h"
 #include <string.h>
@@ -326,11 +327,11 @@ void HomeActivity::launchMenuItem(int item) {
         }
 
         case MENU_APPS: {
-            // Apps Hub - 暂时跳WiFi设置占位
-            WifiActivity* wifi = new WifiActivity(
+            // Apps Hub 应用中心
+            AppsHubActivity* apps = new AppsHubActivity(
                 m_display, m_input, m_storage, m_power,
                 m_touch, m_frontLight, m_settingsManager);
-            m_manager->pushActivity(wifi);
+            m_manager->pushActivity(apps);
             break;
         }
 
